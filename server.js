@@ -3,6 +3,10 @@ require('dotenv').load({ silent: true });
 const Express = require('express');
 const fetch = require('node-fetch');
 const co = require('co');
+const path = require('path');
+const handlebars = require('express-handlebars');
+const bodyParser = require('body-parser');
+const compression = require('compression');
 const json2csv = require('json2csv');
 const { parseString } = require('xml2js');
 const config = require('./config');
@@ -13,7 +17,7 @@ const options = {
 };
 
 function parseXML(rawText) {
-  return textPromise = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     parseString(rawText, (err, result) => {
       if (err) {
         reject(err);
@@ -25,42 +29,49 @@ function parseXML(rawText) {
 }
 
 function* getJobs() {
-  const path = `/job.api/current/`
+  const url = '/job.api/current/';
   const query = `?apiKey=${config.apiKey}&accountKey=${config.accountKey}&detailed=true`;
-  const response = yield fetch(config.workflowHost + path + query, options);
-  const rawText = yield response.text();
-  const resXML = yield parseXML(rawText);
-  return resXML.Response.Jobs[0].Job;
-}
-
-function* getJobs() {
-  const path = `/job.api/current/`
-  const query = `?apiKey=${config.apiKey}&accountKey=${config.accountKey}&detailed=true`;
-  const response = yield fetch(config.workflowHost + path + query, options);
+  const response = yield fetch(config.workflowHost + url + query, options);
   const rawText = yield response.text();
   const resXML = yield parseXML(rawText);
   return resXML.Response.Jobs[0].Job;
 }
 
 function* getInvoices() {
-  const path = `/invoice.api/current/`
+  const url = '/invoice.api/current/';
   const query = `?apiKey=${config.apiKey}&accountKey=${config.accountKey}&detailed=true`;
-  const response = yield fetch(config.workflowHost + path + query, options);
+  const response = yield fetch(config.workflowHost + url + query, options);
   const rawText = yield response.text();
   const resXML = yield parseXML(rawText);
   return resXML.Response.Invoices[0].Invoice;
 }
 
 function* getCostsByJob(jobId) {
-  const path = `/job.api/costs/${jobId}`
+  const url = `/job.api/costs/${jobId}`;
   const query = `?apiKey=${config.apiKey}&accountKey=${config.accountKey}&detailed=true`;
-  const response = yield fetch(config.workflowHost + path + query, options);
+  const response = yield fetch(config.workflowHost + url + query, options);
   const rawText = yield response.text();
   const resXML = yield parseXML(rawText);
   return resXML.Response.Costs[0];
 }
 
+app.set('views', path.join(__dirname, './views'));
+app.engine('.hbs', handlebars({
+  defaultLayout: path.join(__dirname, './views/layouts/main'),
+  extname: '.hbs',
+  partialsDir: path.join(__dirname, './views/partials'),
+}));
+app.set('view engine', '.hbs');
+
+app.use(compression());
+app.use(bodyParser.json());
+app.use(Express.static('dist'));
+
 app.get('/', (req, res) => {
+  res.render('index');
+});
+
+app.get('/jobs', (req, res) => {
   const csvRows = [];
   co(function* () {
     const jobs = yield getJobs();
@@ -90,10 +101,10 @@ app.get('/', (req, res) => {
       res.attachment('totals.csv');
       return res.send(csvOutput);
     }
-    res.send('OK');
+    return res.send('OK');
   }).catch(err => {
     console.log(err);
-    res.sendStatus(500);
+    return res.sendStatus(500);
   });
 });
 
