@@ -7,9 +7,10 @@ const path = require('path');
 const handlebars = require('express-handlebars');
 const bodyParser = require('body-parser');
 const compression = require('compression');
+const session = require('express-session');
 const json2csv = require('json2csv');
 const { parseString } = require('xml2js');
-const config = require('./config');
+const config = require('../config');
 const app = new Express();
 
 const options = {
@@ -55,17 +56,27 @@ function* getCostsByJob(jobId) {
   return resXML.Response.Costs[0];
 }
 
-app.set('views', path.join(__dirname, './views'));
+app.set('views', path.join(__dirname, '../views'));
 app.engine('.hbs', handlebars({
-  defaultLayout: path.join(__dirname, './views/layouts/main'),
+  defaultLayout: path.join(__dirname, '../views/layouts/main'),
   extname: '.hbs',
-  partialsDir: path.join(__dirname, './views/partials'),
+  partialsDir: path.join(__dirname, '../views/partials'),
 }));
 app.set('view engine', '.hbs');
-
+app.use(session({
+  name: 'workflowSession',
+  secret: config.sessionSecret,
+  saveUninitialized: true,
+  resave: false,
+  rolling: true,
+  httpOnly: true,
+  cookie: {
+    maxAge: 3600000 * 24
+  }
+}));
 app.use(compression());
 app.use(bodyParser.json());
-app.use(Express.static('dist'));
+app.use(Express.static(path.join(__dirname, '../dist')));
 
 app.get('/', (req, res) => {
   res.render('index');
@@ -108,6 +119,6 @@ app.get('/jobs', (req, res) => {
   });
 });
 
-app.listen(process.env.PORT || 3000, () => {
+app.listen(config.port, () => {
   console.log('server is listening');
 });
