@@ -1,5 +1,4 @@
-import { load } from 'dotenv';
-load({ silent: true });
+import { } from 'dotenv/config';
 
 import Express from 'express';
 import path from 'path';

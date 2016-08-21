@@ -1,8 +1,14 @@
-import { invoices as invoicesApi } from '../apiSingleton';
+import apiSingleton from '../apiSingleton';
 import { parseXML } from '../utils';
 import config from '../../config';
 
-const params = `?apiKey=${config.apiKey}&accountKey=${config.accountKey}&detailed=true`;
+const { invoices: invoicesApi } = apiSingleton;
+
+const params = {
+  apiKey: config.apiKey,
+  accountKey: config.accountKey,
+  detailed: true
+};
 const headers = {
   Accept: 'application/x-www-form-urlencoded',
   'Content-Type': 'application/x-www-form-urlencoded'

@@ -5,8 +5,12 @@
 cd "$(dirname "$0")/.." || exit
 export PATH="${PWD}/node_modules/.bin:$PATH"
 
+echo "cleaning build artifacts..."
+./bin/clean.sh
+echo ✓
+
 echo "building server js..."
-./bin/build_server.js
+./bin/build_server.sh
 echo ✓
 
 echo "compiling css..."
