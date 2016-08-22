@@ -10,6 +10,7 @@ async function addJobCosts(job, row) {
   const costs = await loadCostsByJob(job.ID[0]);
   if (costs) {
     costs.Cost.forEach(cost => {
+      console.log(cost);
       row['Actual Costs'] += Number(cost.Quantity) * Number(cost.UnitCost);
     });
   }
